@@ -16,7 +16,7 @@ server.get('/', (req, res) => {
 });
 
 const userRouter = require('./routes/User.js');
-server.use('/signup',userRouter.userRoute);
+server.use('/user',userRouter.userRoute);
 
 server.listen(port, () => {
     console.log(`Chat App listening on port ${port}`)
