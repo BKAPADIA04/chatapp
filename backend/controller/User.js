@@ -6,14 +6,12 @@ const jwt = require("jsonwebtoken");
 const UserAccount = require("../model/User.js");
 const User = UserAccount.user;
 
-
-async function securePassword (password) {
+async function securePassword(password) {
   const saltNo = process.env.Salt;
   const salt = await bcrypt.genSalt(+saltNo);
   const secPass = await bcrypt.hash(password, salt);
   return secPass;
 }
-
 
 exports.createUser = async (req, res) => {
   let success = true;
@@ -32,22 +30,18 @@ exports.createUser = async (req, res) => {
 
     if (!!prevUser.Email) {
       success = false;
-      return res
-        .status(400)
-        .json({
-          success: success,
-          error: "Account with this emailid already exists",
-        });
+      return res.status(400).json({
+        success: success,
+        error: "Account with this emailid already exists",
+      });
     }
 
     if (!!prevUser.DisplayName) {
       success = false;
-      return res
-        .status(400)
-        .json({
-          success: success,
-          error: "Account with this display name already exists",
-        });
+      return res.status(400).json({
+        success: success,
+        error: "Account with this display name already exists",
+      });
     }
     try {
       const user = new User(req.body);
@@ -80,29 +74,68 @@ exports.createUser = async (req, res) => {
   }
 };
 
-exports.decodeUser = async (req,res) => {
-  try {
-    const id = req.user.id;
-    const user = await User.findOne({_id : id}).select('-password');
-    res.send(user);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({error : "Internal Server Error"});
+function validateEmail(input) {
+  let validRegex =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+  if (input.match(validRegex)) {
+    return true;
   }
+  return false;
 }
 
-exports.changePassword = async (req,res) => {
+
+
+exports.loginUser = async (req, res) => {
+  try {
+    const { input, password } = req.body;
+    const inputType = validateEmail(input);
+    if (inputType) {
+      try {
+
+      } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "This emailid is not registered" });
+      }
+    }
+    res.send("hi");
+  } catch (err) {
+    console.error(err);
+    res.send("error");
+  }
+};
+
+exports.decodeUser = async (req, res) => {
+  try {
+    const id = req.user.id;
+    const user = await User.findOne({ _id: id }).select("-password");
+    res.status(200).send(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+exports.changePassword = async (req, res) => {
   let success = true;
   try {
     const id = req.user.id;
-    const {newPassword} = req.body;
+    const { newPassword } = req.body;
     let secPass = await securePassword(newPassword);
-    const userWithNewPasswordButOldPassword = await User.findByIdAndUpdate(id,{password:secPass});
+    const userWithNewPasswordButOldPassword = await User.findByIdAndUpdate(id, {
+      password: secPass,
+    });
     const userWithNewPassword = await User.findById(id);
-    res.json({success:success,"message":"Your Password has been updated successfully"});
+    res.status(200).json({
+      success: success,
+      message: "Your Password has been updated successfully",
+    });
   } catch (err) {
     success = false;
     console.error(err);
-    res.status(500).json({success:success, error : "Internal Server Error"});
+    res.status(500).json({ success: success, error: "Internal Server Error" });
   }
-}
+};
+
+exports.resetPassword = async (req, res) => {
+  res.send("hi");
+};

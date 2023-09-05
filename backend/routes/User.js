@@ -13,8 +13,16 @@ userRouter.post('/signup',[
     body('dob','Date needs to be a valid date').isDate({format:'DD/MM/YYYY'})
 ],User.createUser);
 
+userRouter.post('/login',[
+    body('displayName','Enter a valid displayName').isLength({min : 3}),
+    body('emailid','Enter a valid email address').isEmail(),
+    body('password','Password cannot be blank').exists()
+],User.loginUser);
+
 userRouter.post('/changePassword',decoder,User.changePassword);
 
 userRouter.post('/auth/decode',decoder,User.decodeUser);
+
+userRouter.post('/auth.resetPassword',User.resetPassword);
 
 exports.userRoute = userRouter;
