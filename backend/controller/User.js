@@ -6,6 +6,15 @@ const jwt = require("jsonwebtoken");
 const UserAccount = require("../model/User.js");
 const User = UserAccount.user;
 
+
+async function securePassword (password) {
+  const saltNo = process.env.Salt;
+  const salt = await bcrypt.genSalt(+saltNo);
+  const secPass = await bcrypt.hash(password, salt);
+  return secPass;
+}
+
+
 exports.createUser = async (req, res) => {
   let success = true;
   try {
@@ -43,9 +52,7 @@ exports.createUser = async (req, res) => {
     try {
       const user = new User(req.body);
       const password = req.body.password;
-      const saltNo = process.env.Salt;
-      const salt = await bcrypt.genSalt(+saltNo);
-      const secPass = await bcrypt.hash(password, salt);
+      let secPass = await securePassword(password);
       user.password = secPass;
       try {
         const doc = await user.save();
@@ -72,19 +79,6 @@ exports.createUser = async (req, res) => {
     res.status(400).json({ success: success, error: validationError.array() });
   }
 };
-// let securePassword = async (password) => {
-//   const saltNo = process.env.Salt;
-//   const salt = await bcrypt.genSalt(+saltNo);
-//   const secPass = await bcrypt.hash(password, salt);
-//   return secPass;
-// }
-
-async function securePassword (password) {
-  const saltNo = process.env.Salt;
-  const salt = await bcrypt.genSalt(+saltNo);
-  const secPass = await bcrypt.hash(password, salt);
-  return secPass;
-}
 
 exports.decodeUser = async (req,res) => {
   try {
