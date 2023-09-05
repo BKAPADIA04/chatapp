@@ -72,3 +72,31 @@ exports.createUser = async (req, res) => {
     res.status(400).json({ success: success, error: validationError.array() });
   }
 };
+
+exports.changePassword = async (req,res) => {
+  const {password,newPassword} = req.body;
+  const saltNo = process.env.Salt;
+  const salt = await bcrypt.genSalt(+saltNo);
+  const secPass = await bcrypt.hash(password, salt);
+  // const currentUser = await User.findOne({displayName: req.body.displayName });
+  // const passwordDB = currentUser.password;
+  console.log(secPass);
+  res.send("Hi");
+};
+
+exports.decodeUser = async (req,res) => {
+  try {
+    const id = req.user.id;
+    // const user = await User.findOne({_id : id});
+    const {newPassword} = req.body;
+    const saltNo = process.env.Salt;
+    const salt = await bcrypt.genSalt(+saltNo);
+    const secPass = await bcrypt.hash(newPassword, salt);
+    // user.password = secPass;
+    const userWithNewPassword = await User.findByIdAndUpdate(id,{password:secPass});
+    res.send(userWithNewPassword);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({error : "Internal Server Error"});
+  }
+}

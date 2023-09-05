@@ -2,6 +2,8 @@ const express = require('express');
 const userRouter = express.Router();
 const User = require('../controller/User.js');
 const { body } = require('express-validator');
+const decodeMiddleware = require('../middleware/Auth.js');
+const decoder = decodeMiddleware.decoder;
 
 userRouter.post('/signup',[
     body('name','Enter a valid name').isLength({min : 3}),
@@ -11,5 +13,8 @@ userRouter.post('/signup',[
     body('dob','Date needs to be a valid date').isDate({format:'DD/MM/YYYY'})
 ],User.createUser);
 
+userRouter.post('/changePassword',User.changePassword);
+
+userRouter.post('/auth/decode',decoder,User.decodeUser);
 
 exports.userRoute = userRouter;
