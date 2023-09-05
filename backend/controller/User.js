@@ -86,6 +86,7 @@ function validateEmail(input) {
 
 
 exports.loginUser = async (req, res) => {
+  let success = true;
   try {
     const { input, password } = req.body;
     const inputType = validateEmail(input);
@@ -93,8 +94,9 @@ exports.loginUser = async (req, res) => {
       try {
 
       } catch (err) {
+        success = false;
         console.log(err);
-        res.status(500).json({ error: "This emailid is not registered" });
+        res.status(500).json({ success:success,error: "This emailid is not registered" });
       }
     }
     res.send("hi");
