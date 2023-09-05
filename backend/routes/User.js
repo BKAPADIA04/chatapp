@@ -13,7 +13,7 @@ userRouter.post('/signup',[
     body('dob','Date needs to be a valid date').isDate({format:'DD/MM/YYYY'})
 ],User.createUser);
 
-userRouter.post('/changePassword',User.changePassword);
+userRouter.post('/changePassword',decoder,User.changePassword);
 
 userRouter.post('/auth/decode',decoder,User.decodeUser);
 

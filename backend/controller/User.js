@@ -72,31 +72,43 @@ exports.createUser = async (req, res) => {
     res.status(400).json({ success: success, error: validationError.array() });
   }
 };
+// let securePassword = async (password) => {
+//   const saltNo = process.env.Salt;
+//   const salt = await bcrypt.genSalt(+saltNo);
+//   const secPass = await bcrypt.hash(password, salt);
+//   return secPass;
+// }
 
-exports.changePassword = async (req,res) => {
-  const {password,newPassword} = req.body;
+async function securePassword (password) {
   const saltNo = process.env.Salt;
   const salt = await bcrypt.genSalt(+saltNo);
   const secPass = await bcrypt.hash(password, salt);
-  // const currentUser = await User.findOne({displayName: req.body.displayName });
-  // const passwordDB = currentUser.password;
-  console.log(secPass);
-  res.send("Hi");
-};
+  return secPass;
+}
 
 exports.decodeUser = async (req,res) => {
   try {
     const id = req.user.id;
-    // const user = await User.findOne({_id : id});
-    const {newPassword} = req.body;
-    const saltNo = process.env.Salt;
-    const salt = await bcrypt.genSalt(+saltNo);
-    const secPass = await bcrypt.hash(newPassword, salt);
-    // user.password = secPass;
-    const userWithNewPassword = await User.findByIdAndUpdate(id,{password:secPass});
-    res.send(userWithNewPassword);
+    const user = await User.findOne({_id : id}).select('-password');
+    res.send(user);
   } catch (err) {
     console.error(err);
     res.status(500).json({error : "Internal Server Error"});
+  }
+}
+
+exports.changePassword = async (req,res) => {
+  let success = true;
+  try {
+    const id = req.user.id;
+    const {newPassword} = req.body;
+    let secPass = await securePassword(newPassword);
+    const userWithNewPasswordButOldPassword = await User.findByIdAndUpdate(id,{password:secPass});
+    const userWithNewPassword = await User.findById(id);
+    res.json({success:success,"message":"Your Password has been updated successfully"});
+  } catch (err) {
+    success = false;
+    console.error(err);
+    res.status(500).json({success:success, error : "Internal Server Error"});
   }
 }
