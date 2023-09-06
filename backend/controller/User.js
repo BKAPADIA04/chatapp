@@ -83,7 +83,25 @@ function validateEmail(input) {
   return false;
 }
 
-
+async function loginCheck(user,password) {
+  let success = true;
+  if(!user) {
+    success = false;
+    return success;
+  }
+  const passwordCompare = await bcrypt.compare(password,user.password);
+  if(!passwordCompare) {
+    success = false;
+    return success;
+  }
+  const data = {
+    user: {
+      id: user.id,
+    },
+  };
+  const authToken = jwt.sign(data, `${process.env.JWT_SECRET}`);
+  return authToken;
+}
 
 exports.loginUser = async (req, res) => {
   let success = true;
@@ -92,14 +110,36 @@ exports.loginUser = async (req, res) => {
     const inputType = validateEmail(input);
     if (inputType) {
       try {
-
+        let user = await User.findOne({emailid : input});
+        const loginToken = await loginCheck(user,password);
+        if(loginToken == false) {
+          success = false;
+          return res.status(400).json({success : success,error : "Please try to login with correct credentials"});
+        } else {
+          return res.status(201).json({success:success,"authToken":loginToken,"message":"Login Successful!"})
+        }
       } catch (err) {
         success = false;
         console.log(err);
-        res.status(500).json({ success:success,error: "This emailid is not registered" });
+        res.status(500).json({ success:success,error: "Internal Server Error" });
       }
     }
-    res.send("hi");
+    else {
+      try {
+        let user = await User.findOne({displayName : input});
+        const loginToken = await loginCheck(user,password);
+        if(loginToken == false) {
+          success = false;
+          return res.status(400).json({success : success,error : "Please try to login with correct credentials"});
+        } else {
+          return res.status(201).json({success:success,"authToken":loginToken,"message":"Login Successful!"})
+        }
+      } catch(err) {
+        success = false;
+        console.log(err);
+        res.status(500).json({ success:success,error: "Internal Server Error" });
+      }
+    }
   } catch (err) {
     console.error(err);
     res.send("error");
