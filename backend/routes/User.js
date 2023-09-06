@@ -14,8 +14,7 @@ userRouter.post('/signup',[
 ],User.createUser);
 
 userRouter.post('/login',[
-    body('displayName','Enter a valid displayName').isLength({min : 3}),
-    body('emailid','Enter a valid email address').isEmail(),
+    body('input','Input(Emailid or DisplayNamwe) cannot be blank').exists(),
     body('password','Password cannot be blank').exists()
 ],User.loginUser);
 
