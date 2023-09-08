@@ -7,6 +7,7 @@ const userSchema = new Schema({
     emailid: { type: String, required: true, unique: true },
     password: { type: String, required: true, minlength:[5,'Minimum 5 characters'] },
     dob: { type: Date },
+    resetLink: { type: String, default: ''},
     timestamp: { type: Date, default: Date.now },
   });
   

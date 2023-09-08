@@ -106,7 +106,6 @@ async function loginCheck(user, password) {
 exports.loginUser = async (req, res) => {
   let success = true;
   try {
-
     const errors = validationResult(req);
     const arr = errors.array();
     let printmsg;
@@ -117,31 +116,26 @@ exports.loginUser = async (req, res) => {
         printmsg = errorMsg;
         success = false;
       }
-      return res.status(400).json({ success:success,error: printmsg });
+      return res.status(400).json({ success: success, error: printmsg });
     }
 
     const { input, password } = req.body;
     const inputType = validateEmail(input);
-    if (inputType) {
       try {
-        let user = await User.findOne({ emailid: input });
+        let user = await User.findOne({ emailid: input }) || await User.findOne({ displayName: input });;
         const loginToken = await loginCheck(user, password);
         if (loginToken == false) {
           success = false;
-          return res
-            .status(400)
-            .json({
-              success: success,
-              error: "Please try to login with correct credentials",
-            });
+          return res.status(400).json({
+            success: success,
+            error: "Please try to login with correct credentials",
+          });
         } else {
-          return res
-            .status(201)
-            .json({
-              success: success,
-              authToken: loginToken,
-              message: "Login Successful!",
-            });
+          return res.status(201).json({
+            success: success,
+            authToken: loginToken,
+            message: "Login Successful!",
+          });
         }
       } catch (err) {
         success = false;
@@ -150,41 +144,10 @@ exports.loginUser = async (req, res) => {
           .status(500)
           .json({ success: success, error: "Internal Server Error" });
       }
-    } else {
-      try {
-        let user = await User.findOne({ displayName: input });
-        const loginToken = await loginCheck(user, password);
-        if (loginToken == false) {
-          success = false;
-          return res
-            .status(400)
-            .json({
-              success: success,
-              error: "Please try to login with correct credentials",
-            });
-        } else {
-          return res
-            .status(201)
-            .json({
-              success: success,
-              authToken: loginToken,
-              message: "Login Successful!",
-            });
-        }
-      } catch (err) {
-        success = false;
-        console.log(err);
-        res
-          .status(500)
-          .json({ success: success, error: "Internal Server Error" });
-      }
-    }
   } catch (err) {
     success = false;
     console.error(err);
-    res
-        .status(500)
-        .json({ success: success, error: "Internal Server Error" });
+    res.status(500).json({ success: success, error: "Internal Server Error" });
   }
 };
 
@@ -204,11 +167,16 @@ exports.changePassword = async (req, res) => {
   try {
     const id = req.user.id;
     const user = await User.findOne({ _id: id });
-    const { confirmPassword,newPassword } = req.body;
-    const passwordCompare = await bcrypt.compare(confirmPassword, user.password);
-    if(!passwordCompare) {
+    const { confirmPassword, newPassword } = req.body;
+    const passwordCompare = await bcrypt.compare(
+      confirmPassword,
+      user.password
+    );
+    if (!passwordCompare) {
       success = false;
-      return res.status(401).json({success:success,error:"Invalid Password"});
+      return res
+        .status(401)
+        .json({ success: success, error: "Invalid Password" });
     }
     let secPass = await securePassword(newPassword);
     const userWithNewPasswordButOldPassword = await User.findByIdAndUpdate(id, {
@@ -226,6 +194,23 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+
+
+
+
 exports.resetPassword = async (req, res) => {
-  res.send("hi");
+  let success = true;
+  const {input} = req.body;
+  const inputType = validateEmail(input);
+    try {
+      let user = await User.findOne({ emailid: input }) || await User.findOne({ displayName: input });
+      if(!user) {
+        success = false;
+        return res.status(501).json({success:success, error:"Try using correct credentials"})
+      }
+      res.send(user);
+    }
+    catch(err) {
+      res.send("error");
+    }
 };

@@ -22,6 +22,6 @@ userRouter.post('/changePassword',decoder,User.changePassword);
 
 userRouter.post('/auth/decode',decoder,User.decodeUser);
 
-userRouter.post('/auth.resetPassword',User.resetPassword);
+userRouter.post('/auth/resetPassword',User.resetPassword);
 
 exports.userRoute = userRouter;
