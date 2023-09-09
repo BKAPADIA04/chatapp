@@ -208,7 +208,7 @@ async function sendMailForReset(user, randomString) {
       pass: process.env.GmailPassword,
     },
   };
-
+ 
   const emailData = {
     from: "noreply@helloworld.in",
     to: user.emailid,
