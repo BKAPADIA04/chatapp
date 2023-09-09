@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const randomString = require("randomstring");
-const cors = require('cors');
+const cors = require("cors");
 
 const UserAccount = require("../model/User.js");
 const User = UserAccount.user;
@@ -124,29 +124,31 @@ exports.loginUser = async (req, res) => {
 
     const { input, password } = req.body;
     const inputType = validateEmail(input);
-      try {
-        let user = await User.findOne({ emailid: input }) || await User.findOne({ displayName: input });;
-        const loginToken = await loginCheck(user, password);
-        if (loginToken == false) {
-          success = false;
-          return res.status(400).json({
-            success: success,
-            error: "Please try to login with correct credentials",
-          });
-        } else {
-          return res.status(201).json({
-            success: success,
-            authToken: loginToken,
-            message: "Login Successful!",
-          });
-        }
-      } catch (err) {
+    try {
+      let user =
+        (await User.findOne({ emailid: input })) ||
+        (await User.findOne({ displayName: input }));
+      const loginToken = await loginCheck(user, password);
+      if (loginToken == false) {
         success = false;
-        console.log(err);
-        res
-          .status(500)
-          .json({ success: success, error: "Internal Server Error" });
+        return res.status(400).json({
+          success: success,
+          error: "Please try to login with correct credentials",
+        });
+      } else {
+        return res.status(201).json({
+          success: success,
+          authToken: loginToken,
+          message: "Login Successful!",
+        });
       }
+    } catch (err) {
+      success = false;
+      console.log(err);
+      res
+        .status(500)
+        .json({ success: success, error: "Internal Server Error" });
+    }
   } catch (err) {
     success = false;
     console.error(err);
@@ -199,53 +201,57 @@ exports.changePassword = async (req, res) => {
 
 async function sendMailForReset(user, token) {
   const emailConfig = {
-    service:"gmail",
-    host:'smtp.gmail.com',
-    port:465,
-    secure:true,
+    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
     auth: {
-      user:process.env.GmailUsername,
-      pass:process.env.GmailPassword
+      user: process.env.GmailUsername,
+      pass: process.env.GmailPassword,
     },
   };
 
   const emailData = {
-    from:'noreply@helloworld.in',
-    to:user.emailid,
-    subject:'Reset Account Password Link',
-    html:`
-    <h3>Hi Bhavya, Please click the link below to reset the password</h3>`
-  }
+    from: "noreply@helloworld.in",
+    to: user.emailid,
+    subject: "Reset Account Password Link",
+    html: `
+    <h3>Hi Bhavya, Please click the link below to reset the password</h3>
+    <p><a href = 'http://localhost:8080/user/auth/resetPassword?token=${token}'>Reset Password</a></p>`,
+  };
 
   const transporter = nodemailer.createTransport(emailConfig);
 
   try {
     await transporter.sendMail(emailData);
-    console.log('Email sent successfully');
+    console.log("Email sent successfully");
   } catch (err) {
-    console.error('Error sending email:', err);
+    console.error("Error sending email:", err);
+  } finally {
+    transporter.close();
+  }
 }
-finally {
-  transporter.close();
-}}
 
 exports.resetPassword = async (req, res) => {
   let success = true;
-  const {input} = req.body;
+  const { input } = req.body;
   const inputType = validateEmail(input);
-    try {
-      let user = await User.findOne({ emailid: input }) || await User.findOne({ displayName: input });
-      if(!user) {
-        success = false;
-        return res.status(501).json({success:success, error:"Try using correct credentials"})
-      }
-      // const token = createToken(user);
-      sendMailForReset(user,"123");
-      res.send(user);
+  try {
+    let user =
+      (await User.findOne({ emailid: input })) ||
+      (await User.findOne({ displayName: input }));
+    if (!user) {
+      success = false;
+      return res
+        .status(501)
+        .json({ success: success, error: "Try using correct credentials" });
     }
-    catch(err) {
-      res.send("hi");
-    }
+    // const token = createToken(user);
+    sendMailForReset(user, "123");
+    res.status(200).json({success:success,message:"Password Reset Successful"});
+  } catch (err) {
+    success = false;
+    console.error(err);
+    res.status(500).json({ success: success, error: "Internal Server Error" });
+  }
 };
-
-
