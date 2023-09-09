@@ -3,8 +3,7 @@ const { validationResult } = require("express-validator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const randomString = require("randomstring");
-const cors = require("cors");
+const randomstring = require("randomstring");
 
 const UserAccount = require("../model/User.js");
 const User = UserAccount.user;
@@ -123,7 +122,7 @@ exports.loginUser = async (req, res) => {
     }
 
     const { input, password } = req.body;
-    const inputType = validateEmail(input);
+    // const inputType = validateEmail(input);
     try {
       let user =
         (await User.findOne({ emailid: input })) ||
@@ -184,10 +183,9 @@ exports.changePassword = async (req, res) => {
         .json({ success: success, error: "Invalid Password" });
     }
     let secPass = await securePassword(newPassword);
-    const userWithNewPasswordButOldPassword = await User.findByIdAndUpdate(id, {
+    const userWithNewPassword = await User.findByIdAndUpdate(id, {
       password: secPass,
-    });
-    const userWithNewPassword = await User.findById(id);
+    },{new:true});
     res.status(200).json({
       success: success,
       message: "Your Password has been updated successfully",
@@ -199,7 +197,7 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-async function sendMailForReset(user, token) {
+async function sendMailForReset(user, randomString) {
   const emailConfig = {
     service: "gmail",
     host: "smtp.gmail.com",
@@ -217,7 +215,7 @@ async function sendMailForReset(user, token) {
     subject: "Reset Account Password Link",
     html: `
     <h3>Hi Bhavya, Please click the link below to reset the password</h3>
-    <p><a href = 'http://localhost:8080/user/auth/resetPassword?token=${token}'>Reset Password</a></p>`,
+    <p><a href = 'http://localhost:8080/user/auth/resetPassword?token=${randomString}'>Reset Password</a></p>`,
   };
 
   const transporter = nodemailer.createTransport(emailConfig);
@@ -232,10 +230,10 @@ async function sendMailForReset(user, token) {
   }
 }
 
-exports.resetPassword = async (req, res) => {
+exports.forgetPassword = async (req, res) => {
   let success = true;
   const { input } = req.body;
-  const inputType = validateEmail(input);
+  // const inputType = validateEmail(input);
   try {
     let user =
       (await User.findOne({ emailid: input })) ||
@@ -246,12 +244,49 @@ exports.resetPassword = async (req, res) => {
         .status(501)
         .json({ success: success, error: "Try using correct credentials" });
     }
-    // const token = createToken(user);
-    sendMailForReset(user, "123");
-    res.status(200).json({success:success,message:"Password Reset Successful"});
+    const randomString = randomstring.generate();
+    const data = await User.findByIdAndUpdate(user.id, {
+      resetLink: randomString,
+    });
+    sendMailForReset(user, randomString);
+    res.status(200).json({
+      success: success,
+      message: "Please check your inbox for reset link",
+    });
   } catch (err) {
     success = false;
     console.error(err);
     res.status(500).json({ success: success, error: "Internal Server Error" });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  let success = true;
+  try {
+    const token = req.query.token;
+    const user = await User.findOne({ resetLink: token });
+
+    if (!user) {
+      success = false;
+      return res.status(200).json({
+        success: success,
+        error: "This Link is expired",
+      });
+    }
+    const { newPassword } = req.body;
+    let secPass = await securePassword(newPassword);
+    user.password = secPass;
+    const data = await User.findByIdAndUpdate(
+      user.id,
+      { password: secPass, resetLink: "" },
+      { new: true }
+    );
+    res
+      .status(200)
+      .json({ success: success, message: "User Password has been updated" });
+  } catch (err) {
+    success = false;
+    console.error(err);
+    res.status(400).json({ success: success, error: err });
   }
 };
