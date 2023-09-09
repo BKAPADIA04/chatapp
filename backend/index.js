@@ -9,6 +9,7 @@ connectToMongo();
 const server = express();
 const port = process.env.PORT;
 
+server.use(cors());
 server.use(express.json());
 
 server.get('/', (req, res) => {

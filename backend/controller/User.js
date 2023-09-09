@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const randomString = require("randomstring");
+const cors = require('cors');
 
 const UserAccount = require("../model/User.js");
 const User = UserAccount.user;
@@ -196,69 +197,55 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+async function sendMailForReset(user, token) {
+  const emailConfig = {
+    service:"gmail",
+    host:'smtp.gmail.com',
+    port:465,
+    secure:true,
+    auth: {
+      user:process.env.GmailUsername,
+      pass:process.env.GmailPassword
+    },
+  };
 
+  const emailData = {
+    from:'noreply@helloworld.in',
+    to:user.emailid,
+    subject:'Reset Account Password Link',
+    html:`
+    <h3>Hi Bhavya, Please click the link below to reset the password</h3>`
+  }
 
-// const createToken = (user) => {
-//   const token = jwt.sign({_id:user.id}, `${process.env.JWT_SECRET}`,{expiresIn: '30min'});
-//   return token;
-// }
+  const transporter = nodemailer.createTransport(emailConfig);
 
-// async function sendMailForReset(user, token) {
-//   const emailConfig = {
-//     service:"gmail",
-//     host:'smtp.gmail.com',
-//     port:465,
-//     secure:true,
-//     auth: {
-//       user:"bkapadia04@gmail.com",
-//       pass:"B459082733928K"
-//     },
-//   };
+  try {
+    await transporter.sendMail(emailData);
+    console.log('Email sent successfully');
+  } catch (err) {
+    console.error('Error sending email:', err);
+}
+finally {
+  transporter.close();
+}}
 
-//   const emailData = {
-//     from:'noreply@helloworld.in',
-//     to:user.emailid,
-//     subject:'Reset Account Password Link',
-//     html:`
-//     <h3>Hi ${user.name}, Please click the link below to reset the password</h3>
-//     <p><a href = "http://localhost:8080/user/auth/resetPassword?token=${token}"></p>`
-//   }
-  
-//   const transporter = nodemailer.createTransport(emailConfig);
-
-
-//   // await transporter.sendMail(data,(err,res)=>{
-//   //   if(err) {
-//   //     console.error(err);
-//   //   }
-//   //   else {
-//   //     console.log('This email was sent successfully');
-//   //   }
-//   // });
-//   try {
-//     await transporter.sendMail(emailData);
-//     console.log('Email sent successfully');
-//   } catch (err) {
-//     console.error('Error sending email:', err);
-// }
-// finally {
-//   transporter.close();
-// }}
 exports.resetPassword = async (req, res) => {
-//   let success = true;
-//   const {input} = req.body;
-//   const inputType = validateEmail(input);
-//     try {
-//       let user = await User.findOne({ emailid: input }) || await User.findOne({ displayName: input });
-//       if(!user) {
-//         success = false;
-//         return res.status(501).json({success:success, error:"Try using correct credentials"})
-//       }
-//       const token = createToken(user);
-//       sendMailForReset(user,"123");
-//       res.send(user);
-//     }
-//     catch(err) {
+  let success = true;
+  const {input} = req.body;
+  const inputType = validateEmail(input);
+    try {
+      let user = await User.findOne({ emailid: input }) || await User.findOne({ displayName: input });
+      if(!user) {
+        success = false;
+        return res.status(501).json({success:success, error:"Try using correct credentials"})
+      }
+      // const token = createToken(user);
+      sendMailForReset(user,"123");
+      res.send(user);
+    }
+    catch(err) {
       res.send("hi");
-//     }
+    }
 };
+
+
