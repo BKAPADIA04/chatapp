@@ -183,9 +183,13 @@ exports.changePassword = async (req, res) => {
         .json({ success: success, error: "Invalid Password" });
     }
     let secPass = await securePassword(newPassword);
-    const userWithNewPassword = await User.findByIdAndUpdate(id, {
-      password: secPass,
-    },{new:true});
+    const userWithNewPassword = await User.findByIdAndUpdate(
+      id,
+      {
+        password: secPass,
+      },
+      { new: true }
+    );
     res.status(200).json({
       success: success,
       message: "Your Password has been updated successfully",
@@ -208,7 +212,7 @@ async function sendMailForReset(user, randomString) {
       pass: process.env.GmailPassword,
     },
   };
- 
+
   const emailData = {
     from: "noreply@helloworld.in",
     to: user.emailid,
