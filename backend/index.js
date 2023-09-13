@@ -24,6 +24,8 @@ server.get("/", (req, res) => {
 const userRouter = require("./routes/User.js");
 server.use("/user", userRouter.userRoute);
 
+//Notification,Typing User Indication,Stopped Writing Indication,
+
 io.on('connection',(socket) => {
   socket.on('login',({name,room},callback) => {
     //Call addUser,deleteUser,....
